@@ -34,7 +34,7 @@ function plotperf(methods, curveType="pr"; name="", resolution=600)
         rocData = MLBase.roc(int(truth), float(predictor), resolution)
         xvals = map(xmap, rocData)
         yvals = map(ymap, rocData)
-        aucValue = @sprintf("%0.03f", PrescienceUtils.area_under_curve(reverse(xvals), reverse(yvals)))
+        aucValue = @sprintf("%0.03f", area_under_curve(reverse(xvals), reverse(yvals)))
         append!(labels, [repeat(["AUC = $aucValue, $key"], inner=[length(xvals)])])
         append!(xdata, xvals)
         append!(ydata, yvals)
@@ -47,6 +47,14 @@ function plotperf(methods, curveType="pr"; name="", resolution=600)
         Scale.discrete_color_manual(["grey", "blue", "red", "green", "purple", "pink", "orange"][1:length(methods)+1]...),
         Guide.colorkey("Methods")
     )
+end
+
+function area_under_curve(x, y) # must be sorted by increasing x
+    area = 0
+    for i in 2:length(x)
+        area += (y[i-1]+y[i])/2 * (x[i]-x[i-1])
+    end
+    area
 end
 
 end # module
