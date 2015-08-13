@@ -6,10 +6,10 @@ using MLBase
 using Gadfly
 
 # package code goes here
-function plotperf(truth::AbstractVector, predictor::AbstractVector, curveType="pr"; name="", resolution=600)
-    plotperf({"predictor" => (truth, predictor)}, curveType, name=name, resolution=resolution)
+function plotperf(truth::AbstractVector, predictor::AbstractVector; curveType="pr", name="", resolution=600)
+    plotperf(Dict("predictor" => (truth, predictor)), curveType=curveType, name=name, resolution=resolution)
 end
-function plotperf(methods, curveType="pr"; name="", resolution=600)
+function plotperf(methods; curveType="pr", name="", resolution=600)
 
     if curveType == "roc"
         xlabel = "False Positive Rate"
@@ -32,9 +32,11 @@ function plotperf(methods, curveType="pr"; name="", resolution=600)
     methods["random"] = (truth, rand(length(truth)))
     for (key,(truth,predictor)) in methods
         rocData = MLBase.roc(int(truth), float(predictor), resolution)
-        xvals = map(xmap, rocData)
-        yvals = map(ymap, rocData)
-        aucValue = @sprintf("%0.03f", area_under_curve(reverse(xvals), reverse(yvals)))
+        vals = collect(map(x->(xmap(x), -ymap(x)), rocData))
+        sort!(vals)
+        xvals = map(x->x[1], vals)
+        yvals = map(x->-x[2], vals)
+        aucValue = @sprintf("%0.03f", area_under_curve(xvals, yvals))
         append!(labels, [repeat(["AUC = $aucValue, $key"], inner=[length(xvals)])])
         append!(xdata, xvals)
         append!(ydata, yvals)
