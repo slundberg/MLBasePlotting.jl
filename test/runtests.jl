@@ -1,5 +1,12 @@
 using MLBasePlotting
 using Base.Test
 
-# write your own tests here
-@test 1 == 1
+# plotperf
+labels = int(randbool(1000))
+values = randn(1000)
+plotperf(labels, values)
+plotperf(labels, values, name="ROC Test", curveType="roc")
+plotperf({
+	"model1" => (labels, values),
+	"model2" => (labels, randn(1000))
+})
