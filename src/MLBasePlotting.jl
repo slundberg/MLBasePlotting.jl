@@ -5,9 +5,15 @@ export plotperf
 using MLBase
 using Gadfly
 
-# package code goes here
+function plotperf(sortedTruth::AbstractVector; curveType="pr", name="", resolution=600)
+    methods = Dict()
+    methods["predictor"] = (sortedTruth, -collect(1:length(corrBinaryEvalAug)))
+    plotperf(methods, curveType=curveType, name=name, resolution=resolution)
+end
 function plotperf(truth::AbstractVector, predictor::AbstractVector; curveType="pr", name="", resolution=600)
-    plotperf(Dict("predictor" => (truth, predictor)), curveType=curveType, name=name, resolution=resolution)
+    methods = Dict()
+    methods["predictor"] = (truth, predictor)
+    plotperf(methods, curveType=curveType, name=name, resolution=resolution)
 end
 function plotperf(methods; curveType="pr", name="", resolution=600)
 
@@ -31,7 +37,7 @@ function plotperf(methods; curveType="pr", name="", resolution=600)
     truth = methods[first(keys(methods))][1]
     methods["random"] = (truth, rand(length(truth)))
     for (key,(truth,predictor)) in methods
-        rocData = MLBase.roc(int(truth), float(predictor), resolution)
+        rocData = MLBase.roc(round(Int64, truth), float(predictor), resolution)
         vals = collect(map(x->(xmap(x), -ymap(x)), rocData))
         sort!(vals)
         xvals = map(x->x[1], vals)
@@ -51,10 +57,27 @@ function plotperf(methods; curveType="pr", name="", resolution=600)
     )
 end
 
+function area_under_roc(truth::AbstractVector, predictor::AbstractVector)
+    rocData = MLBase.roc(round(Int64, truth), float(predictor), resolution)
+    vals = collect(map(x->(xmap(x), -ymap(x)), rocData))
+    sort!(vals)
+    xvals = map(x->x[1], vals)
+    yvals = map(x->-x[2], vals)
+    aucValue = @sprintf("%0.03f", area_under_curve(xvals, yvals))
+end
+
+# handles NaN values by using previous valid values
 function area_under_curve(x, y) # must be sorted by increasing x
-    area = 0
+    area = 0.0
+    lastVal = NaN
     for i in 2:length(x)
-        area += (y[i-1]+y[i])/2 * (x[i]-x[i-1])
+        v = (y[i-1]+y[i])/2 * (x[i]-x[i-1])
+        if !isnan(v)
+            area += v
+            lastVal = v
+        elseif !isnan(lastVal)
+            area += lastVal
+        end
     end
     area
 end
