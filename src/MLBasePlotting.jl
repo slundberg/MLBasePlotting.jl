@@ -7,7 +7,7 @@ using Gadfly
 
 function plotperf(sortedTruth::AbstractVector; curveType="pr", name="", resolution=600)
     methods = Dict()
-    methods["predictor"] = (sortedTruth, -collect(1:length(corrBinaryEvalAug)))
+    methods["predictor"] = (sortedTruth, -collect(1:length(sortedTruth)))
     plotperf(methods, curveType=curveType, name=name, resolution=resolution)
 end
 function plotperf(truth::AbstractVector, predictor::AbstractVector; curveType="pr", name="", resolution=600)
