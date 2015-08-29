@@ -52,7 +52,7 @@ function plotperf(methods; curveType="pr", name="", resolution=600)
         Guide.title("$name"),
         Guide.XLabel(xlabel),
         Guide.YLabel(ylabel), Geom.line,
-        Scale.discrete_color_manual(["grey", "blue", "red", "green", "purple", "pink", "orange"][1:length(methods)+1]...),
+        #Scale.discrete_color_manual(["grey", "blue", "red", "green", "purple", "pink", "orange"][1:length(methods)+1]...),
         Guide.colorkey("Methods")
     )
 end
