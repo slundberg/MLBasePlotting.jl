@@ -30,30 +30,72 @@ function plotperf(methods; curveType="pr", name="", resolution=600)
         ymap = x->precision(x)
         if name == "" name = "Precision/Recall" end
     end
+
+    # generate the random predictors
+    xmean = zeros(resolution)
+    ymean = zeros(resolution)
+    layers = Any[]
+    truth = methods[first(keys(methods))][1]
+    numRandom = 10
+    for i in 1:numRandom
+        predictor = rand(length(truth))
+        rocData = MLBase.roc(round(Int64, truth), float(predictor), resolution)
+        vals = collect(map(x->(xmap(x), -ymap(x)), rocData))
+        sort!(vals)
+        xvals = map(x->x[1], vals)
+        yvals = map(x->-x[2], vals)
+        xmean .+= xvals
+        ymean .+= yvals
+        aucValue = @sprintf("%0.03f", MLBasePlotting.area_under_curve(xvals, yvals))
+        push!(layers, layer(
+            x=xvals, y=yvals,
+            Geom.line,
+            Theme(default_color=color("lightgrey"))
+        ))
+    end
+    xmean /= numRandom
+    ymean /= numRandom
+    push!(layers, layer(
+        x=xmean, y=ymean,
+        Geom.line,
+        Theme(default_color=color("grey"))
+    ))
+
+
+    # plot the mean of the random predictors
     labels = ASCIIString[]
     xdata = Float64[]
     ydata = Float64[]
-    data = Dict()
-    truth = methods[first(keys(methods))][1]
-    methods["random"] = (truth, rand(length(truth)))
+    aucValue = @sprintf("%0.03f", area_under_curve(xmean, ymean))
+    append!(labels, [repeat(["AUC = $aucValue, random"], inner=[length(xmean)])])
+    append!(xdata, xmean)
+    append!(ydata, ymean)
+
+
+    # plot the actual passed data
     for (key,(truth,predictor)) in methods
         rocData = MLBase.roc(round(Int64, truth), float(predictor), resolution)
         vals = collect(map(x->(xmap(x), -ymap(x)), rocData))
         sort!(vals)
         xvals = map(x->x[1], vals)
         yvals = map(x->-x[2], vals)
-        aucValue = @sprintf("%0.03f", area_under_curve(xvals, yvals))
+        aucValue = @sprintf("%0.03f", MLBasePlotting.area_under_curve(xvals, yvals))
         append!(labels, [repeat(["AUC = $aucValue, $key"], inner=[length(xvals)])])
         append!(xdata, xvals)
         append!(ydata, yvals)
     end
 
-    plot(x=xdata, y=ydata, color=labels,
+    plot(
         Guide.title("$name"),
         Guide.XLabel(xlabel),
-        Guide.YLabel(ylabel), Geom.line,
-        #Scale.discrete_color_manual(["grey", "blue", "red", "green", "purple", "pink", "orange"][1:length(methods)+1]...),
-        Guide.colorkey("Methods")
+        Guide.YLabel(ylabel),
+        Guide.colorkey("Methods"),
+        layer(
+            x=xdata, y=ydata, color=labels,
+            Geom.line
+        ),
+        layers...,
+        Scale.discrete_color_manual(["grey", "blue", "red", "green", "purple", "pink", "orange"][1:length(methods)+1]...)
     )
 end
 
