@@ -38,7 +38,7 @@ function plotperf(methods; curveType="pr", name="", resolution=600)
     truth = methods[first(keys(methods))][1]
     numRandom = 10
     for i in 1:numRandom
-        predictor = rand(length(truth))
+        predictor = invperm(sortperm(rand(length(truth))))
         rocData = MLBase.roc(round(Int64, truth), float(predictor), resolution)
         vals = collect(map(x->(xmap(x), -ymap(x)), rocData))
         sort!(vals)
@@ -50,7 +50,7 @@ function plotperf(methods; curveType="pr", name="", resolution=600)
         push!(layers, layer(
             x=xvals, y=yvals,
             Geom.line,
-            Theme(default_color=color("lightgrey"))
+            Theme(default_color=colorant"lightgrey")
         ))
     end
     xmean /= numRandom
@@ -58,7 +58,7 @@ function plotperf(methods; curveType="pr", name="", resolution=600)
     push!(layers, layer(
         x=xmean, y=ymean,
         Geom.line,
-        Theme(default_color=color("grey"))
+        Theme(default_color=colorant"grey")
     ))
 
 
@@ -67,20 +67,20 @@ function plotperf(methods; curveType="pr", name="", resolution=600)
     xdata = Float64[]
     ydata = Float64[]
     aucValue = @sprintf("%0.03f", area_under_curve(xmean, ymean))
-    append!(labels, [repeat(["AUC = $aucValue, random"], inner=[length(xmean)])])
+    append!(labels, collect(repeat(["AUC = $aucValue, random"], inner=[length(xmean)])))
     append!(xdata, xmean)
     append!(ydata, ymean)
 
 
     # plot the actual passed data
     for (key,(truth,predictor)) in methods
-        rocData = MLBase.roc(round(Int64, truth), float(predictor), resolution)
+        rocData = MLBase.roc(round(Int64, truth), float(invperm(sortperm(predictor))), resolution)
         vals = collect(map(x->(xmap(x), -ymap(x)), rocData))
         sort!(vals)
         xvals = map(x->x[1], vals)
         yvals = map(x->-x[2], vals)
         aucValue = @sprintf("%0.03f", MLBasePlotting.area_under_curve(xvals, yvals))
-        append!(labels, [repeat(["AUC = $aucValue, $key"], inner=[length(xvals)])])
+        append!(labels, collect(repeat(["AUC = $aucValue, $key"], inner=[length(xvals)])))
         append!(xdata, xvals)
         append!(ydata, yvals)
     end
