@@ -24,3 +24,5 @@ auc_pr = area_under_pr(truthValues, predValues)
 plotperf(truthValues, predValues)
 ```
 ![Sample PR plot](/doc/samplePlotPR.png?raw=true)
+
+Note that the light grey lines are random predictors, and the dark grey line is the average performance of these random predictors. They are included to provide an idea of the random varability of a predictor, and the random guess rate.
